@@ -1,5 +1,7 @@
 package com.langchain.common.Client.serviceCenter;
 
+import com.langchain.common.Client.ZKWatcher.WatchZK;
+import com.langchain.common.Client.cache.ServiceCache;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -15,19 +17,28 @@ public class ZKServiceCenter implements ServiceCenter{
 
     private static final String ROOT_PATH = "MyRPC";
 
+    private ServiceCache serviceCache;
+
     public ZKServiceCenter(){
         RetryPolicy policy = new ExponentialBackoffRetry(1000,3);
         this.client = CuratorFrameworkFactory.builder().connectString("localhost:2181").sessionTimeoutMs(40000).retryPolicy(policy).namespace(ROOT_PATH).build();
         this.client.start();
         System.out.println("zookeeper 连接成功");
+        this.serviceCache = new ServiceCache();
+        WatchZK watcher = new WatchZK(client,serviceCache);
+        watcher.watchToUpdate(ROOT_PATH);
     }
 
     @Override
     public InetSocketAddress serviceDiscovery(String serviceName) {
 
         try {
-            List<String> strings = client.getChildren().forPath("/" + serviceName);
-            String string = strings.get(0);
+            //先从本地缓存中查找
+            List<String> serviceList = serviceCache.getServiceAddress(serviceName);
+            if (serviceList == null) {
+                serviceList = client.getChildren().forPath("/" + serviceName);
+            }
+            String string = serviceList.get(0);
             return parseAddress(string);
         } catch (Exception e) {
             e.printStackTrace();
