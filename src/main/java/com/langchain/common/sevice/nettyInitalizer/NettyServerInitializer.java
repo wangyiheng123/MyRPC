@@ -1,5 +1,8 @@
 package com.langchain.common.sevice.nettyInitalizer;
 
+import com.langchain.common.serializer.JsonSerializer;
+import com.langchain.common.serializer.MyDecoder;
+import com.langchain.common.serializer.MyEncoder;
 import com.langchain.common.sevice.handler.NettyServerHandler;
 import com.langchain.common.sevice.provider.server.ServiceProvider;
 import io.netty.channel.ChannelInitializer;
@@ -20,18 +23,21 @@ public class NettyServerInitializer extends ChannelInitializer<SocketChannel> {
     protected void initChannel(SocketChannel socketChannel) throws Exception {
         ChannelPipeline channelPipeline = socketChannel.pipeline();
 
-        channelPipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,0,4,0,4));
-
-        channelPipeline.addLast(new LengthFieldPrepender(4));
-
-        channelPipeline.addLast(new ObjectEncoder());
-
-        channelPipeline.addLast(new ObjectDecoder(new ClassResolver() {
-            @Override
-            public Class<?> resolve(String s) throws ClassNotFoundException {
-                return Class.forName(s);
-            }
-        }));
+//        channelPipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE,0,4,0,4));
+//
+//        channelPipeline.addLast(new LengthFieldPrepender(4));
+//
+//        channelPipeline.addLast(new ObjectEncoder());
+//
+//        channelPipeline.addLast(new ObjectDecoder(new ClassResolver() {
+//            @Override
+//            public Class<?> resolve(String s) throws ClassNotFoundException {
+//                return Class.forName(s);
+//            }
+//        }));
+        //使用自定义的编码器和解码器
+        channelPipeline.addLast(new MyDecoder());
+        channelPipeline.addLast(new MyEncoder(new JsonSerializer()));
 
         channelPipeline.addLast(new NettyServerHandler(serviceProvider));
     }
