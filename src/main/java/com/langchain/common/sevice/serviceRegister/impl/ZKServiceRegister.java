@@ -24,7 +24,7 @@ public class ZKServiceRegister implements ServiceRegister {
     }
 
     @Override
-    public void register(String serviceName, InetSocketAddress serviceAddress) {
+    public void register(String serviceName, InetSocketAddress serviceAddress,boolean canRetry) {
         try {
             if(client.checkExists().forPath("/" + serviceName) == null){
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath("/" + serviceName);
@@ -32,6 +32,10 @@ public class ZKServiceRegister implements ServiceRegister {
             String path = "/" + serviceName + "/" + getServiceAddress(serviceAddress);
 
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(path);
+
+            if (canRetry){
+                client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath("/Retry/" + serviceName);
+            }
         } catch (Exception e) {
             System.out.println("此服务已经存在！");
         }

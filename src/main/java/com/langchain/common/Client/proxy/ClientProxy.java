@@ -2,6 +2,9 @@ package com.langchain.common.Client.proxy;
 
 import com.langchain.common.Client.IOClient;
 import com.langchain.common.Client.netty.handler.nettyInitializer.NettyRpcClient;
+import com.langchain.common.Client.retry.GuavaRetry;
+import com.langchain.common.Client.serviceCenter.ServiceCenter;
+import com.langchain.common.Client.serviceCenter.ZKServiceCenter;
 import com.langchain.common.message.RpcRequest;
 import com.langchain.common.message.RpcResponse;
 import com.langchain.common.rpcClient.RpcClient;
@@ -21,6 +24,8 @@ public class ClientProxy implements InvocationHandler {
 
     private RpcClient rpcClient;
 
+    private ServiceCenter serviceCenter;
+
     public ClientProxy(String host,int port,int choose){
         switch (choose){
             case 0:
@@ -33,12 +38,18 @@ public class ClientProxy implements InvocationHandler {
 
     public ClientProxy(){
         rpcClient = new NettyRpcClient();
+        serviceCenter = new ZKServiceCenter();
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         RpcRequest request = RpcRequest.builder().interfaceName(method.getDeclaringClass().getName()).methodName(method.getName()).params(args).paramsType(method.getParameterTypes()).build();
-        RpcResponse response = rpcClient.sendRequest(request);
+        RpcResponse response = null;
+        if (serviceCenter.checkRetry(request.getInterfaceName())){
+            response = new GuavaRetry().sendServiceWithRetry(request,rpcClient);
+        }else {
+            response = rpcClient.sendRequest(request);
+        }
         return response.getData();
     }
 

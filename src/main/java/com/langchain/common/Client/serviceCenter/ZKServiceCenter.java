@@ -49,6 +49,22 @@ public class ZKServiceCenter implements ServiceCenter{
         return null;
     }
 
+    @Override
+    public boolean checkRetry(String serviceName) {
+        try {
+            List<String> serviceList = client.getChildren().forPath("/Retry");
+            for (String s : serviceList){
+                if (s.equals(serviceName)){
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+
     private InetSocketAddress parseAddress(String address){
         String[] result = address.split(":");
         return new InetSocketAddress(result[0],Integer.parseInt(result[1]));
