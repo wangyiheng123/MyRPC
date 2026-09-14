@@ -1,5 +1,6 @@
 package com.langchain.common.sevice.provider.server;
 
+import com.langchain.common.ratelimit.provider.RateLimitProvider;
 import com.langchain.common.sevice.serviceRegister.ServiceRegister;
 import com.langchain.common.sevice.serviceRegister.impl.ZKServiceRegister;
 
@@ -17,6 +18,8 @@ public class ServiceProvider {
 
     private ServiceRegister serviceRegister;
 
+    private RateLimitProvider rateLimitProvider;
+
     public ServiceProvider(){
         this.interfaceProvider = new HashMap<>();
     }
@@ -25,6 +28,7 @@ public class ServiceProvider {
         this.port = port;
         this.interfaceProvider = new HashMap<>();
         this.serviceRegister = new ZKServiceRegister();
+        this.rateLimitProvider = new RateLimitProvider();
     }
 
     //本地注册服务
@@ -41,5 +45,9 @@ public class ServiceProvider {
     //获得服务实例
     public Object getService(String interfaceName){
         return interfaceProvider.get(interfaceName);
+    }
+
+    public RateLimitProvider getRateLimitProvider(){
+        return rateLimitProvider;
     }
 }
